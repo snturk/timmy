@@ -5,9 +5,10 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"time"
+
 	"github.com/snturk/timmy/internal/model"
 	"github.com/snturk/timmy/internal/util"
-	"time"
 )
 
 // StartTimeEntry starts a new time entry, and saves it to the file.
@@ -147,4 +148,84 @@ func PrintTodayBrief() error {
 	fmt.Println(briefText.String())
 
 	return nil
+}
+
+// PrintCurrent prints the currently running time entry. If there is none, it prints a message.
+func PrintCurrent() error {
+	file, err := util.GetCurrentTimmyFile()
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	// Read file line by line.
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		line := scanner.Text()
+
+		// Parse line.
+		entry, err := model.ParseTimeEntry(line)
+		if err != nil {
+			return err
+		}
+
+		// Check if entry is running.
+		//If it is, print it. If it's not, do nothing.
+		if entry.Running {
+			fmt.Println("Your current time entry:")
+			// Do not print after the . (dot).
+			fmt.Println("- " + entry.Task + ": " + entry.GetDuration().Round(time.Second).String())
+			return nil
+		}
+	}
+
+	fmt.Println("You have no running time entries.")
+
+	return nil
+}
+
+// IsAnyTimeEntryRunning returns true if there is any time entry running.
+func IsAnyTimeEntryRunning() bool {
+	file, err := util.GetCurrentTimmyFile()
+	if err != nil {
+		return false
+	}
+	defer file.Close()
+
+	// Read file line by line.
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		line := scanner.Text()
+
+		// Parse line.
+		entry, err := model.ParseTimeEntry(line)
+		if err != nil {
+			return false
+		}
+
+		// Check if entry is running.
+		//If it is, return true. If it's not, do nothing.
+		if entry.Running {
+			return true
+		}
+	}
+
+	return false
+}
+
+// HasAnyTimeEntry returns true if there is any time entry.
+func HasAnyTimeEntry() bool {
+	file, err := util.GetCurrentTimmyFile()
+	if err != nil {
+		return false
+	}
+	defer file.Close()
+
+	// Read file line by line.
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		return true
+	}
+
+	return false
 }

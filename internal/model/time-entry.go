@@ -2,9 +2,10 @@ package model
 
 import (
 	"bytes"
-	"github.com/snturk/timmy/internal/constants"
 	"strconv"
 	"time"
+
+	"github.com/snturk/timmy/internal/constants"
 )
 
 // TimeEntry represents a single time entry.
@@ -17,6 +18,8 @@ type TimeEntry struct {
 	Task string `json:"task"`
 	// Is the entry currently running?
 	Running bool `json:"running"`
+	// Is the entry fetched with Toggl?
+	Fetched bool `json:"fetched"`
 }
 
 // String returns a string representation of the time entry.
@@ -30,8 +33,19 @@ func (entry TimeEntry) String() string {
 	entryString.WriteString(entry.Task)
 	entryString.WriteString(constants.FileDataDivider)
 	entryString.WriteString(strconv.FormatBool(entry.Running))
+	entryString.WriteString(constants.FileDataDivider)
+	entryString.WriteString(strconv.FormatBool(entry.Fetched))
 
 	return entryString.String()
+}
+
+// GetDuration returns the duration of the time entry.
+func (entry TimeEntry) GetDuration() time.Duration {
+	if entry.Running {
+		return time.Now().Local().Sub(entry.Start)
+	} else {
+		return entry.End.Sub(entry.Start)
+	}
 }
 
 // ParseTimeEntry parses a string representation of a time entry.
@@ -59,6 +73,12 @@ func ParseTimeEntry(entryString string) (TimeEntry, error) {
 
 	// Parse the running status.
 	entry.Running, err = strconv.ParseBool(string(entryData[3]))
+	if err != nil {
+		return entry, err
+	}
+
+	// Parse the fetched status.
+	entry.Fetched, err = strconv.ParseBool(string(entryData[4]))
 	if err != nil {
 		return entry, err
 	}
