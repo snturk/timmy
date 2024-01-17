@@ -14,7 +14,7 @@ import (
 var startCmd = &cobra.Command{
 	Use:   "start",
 	Short: "Start the time tracker",
-	Long:  `This will start the time tracker with provided task name.`,
+	Long:  `This will start the time tracker with provided task name. If there is a running time entry, it will return an error.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		// Task name is required
 		if len(args) < 1 {

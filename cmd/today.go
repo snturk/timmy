@@ -1,10 +1,11 @@
 /*
-Copyright © 2024 NAME HERE <EMAIL ADDRESS>
+Copyright © 2024 Muratcan Senturk <mcsnturk@gmail.com>
 */
 package cmd
 
 import (
 	"fmt"
+
 	"github.com/snturk/timmy/internal/service"
 	"github.com/spf13/cobra"
 )
