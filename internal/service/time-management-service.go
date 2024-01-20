@@ -103,47 +103,55 @@ func StopTimeEntry() error {
 
 // PrintTodayBrief prints a brief summary of today's time entries.
 func PrintTodayBrief() error {
-	hasEntryFlag := false
 	briefText := bytes.Buffer{}
+	currentlyRunningText := bytes.Buffer{}
+	totalDuration := time.Duration(0)
+
 	file, err := util.GetCurrentTimmyFile()
 	if err != nil {
 		return err
 	}
 	defer file.Close()
-	var durationMap = make(map[string]time.Duration)
 
 	// Read file line by line.
 	scanner := bufio.NewScanner(file)
 
 	// Print header.
-	briefText.WriteString("Your daily time entries:\n")
+	briefText.WriteString("Today's time entries:\n")
+
+	// Print header for currently running section.
+	currentlyRunningText.WriteString("Currently running:\n")
 
 	for scanner.Scan() {
-		hasEntryFlag = true
-		entryName, duration, err := util.GetTaskDuration(scanner)
+		entry, err := model.ParseTimeEntry(scanner.Text())
 		if err != nil {
 			return err
 		}
 
-		durationMap[entryName] += duration
+		// Calculate total duration.
+		totalDuration += entry.GetDuration()
+
+		if entry.Running {
+			currentlyRunningText.WriteString("- " + entry.Task + ": " + entry.GetDuration().Round(time.Second).String() + "\n")
+			continue
+		} else {
+			briefText.WriteString("- " + entry.Task + ": " + entry.GetDuration().Round(time.Second).String())
+			if entry.Fetched {
+				briefText.WriteString(" (Synced)\n")
+			} else {
+				briefText.WriteString(" (Not synced)\n")
+			}
+		}
 	}
 
-	if !hasEntryFlag {
-		fmt.Println("You have no time entries for today.")
-		return nil
-	}
-
-	totalDuration := time.Duration(0)
-	for task, duration := range durationMap {
-		// Print task and duration.
-		briefText.WriteString("- " + task + ": " + duration.String() + "\n")
-
-		// Add to total duration.
-		totalDuration += duration
+	// Print currently running section.
+	if currentlyRunningText.Len() > len("Currently running:\n") {
+		briefText.WriteString("\n")
+		briefText.WriteString(currentlyRunningText.String())
 	}
 
 	// Print total duration.
-	briefText.WriteString("Total: " + totalDuration.String() + "\n")
+	briefText.WriteString("Total: " + totalDuration.Round(time.Second).String())
 
 	fmt.Println(briefText.String())
 
